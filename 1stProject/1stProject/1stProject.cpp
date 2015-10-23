@@ -6,6 +6,8 @@
 #include <stdio.h>
 
 #include "Camera.h"
+#include "Image.h"
+#include "FindRoad.h"
 #include <iostream>
 #include <string>
 
@@ -14,11 +16,17 @@ using namespace std;
 using namespace cv;
 
 void detectRoadInImage(string imageDir) {
-	Mat image1 = imread(imageDir, 1);
+	Image image1 = Image(imageDir);
+
+	FindRoad find = FindRoad(image1.getImage());
+	find.canny();
+	
+	/*
 	Mat image;
-	resize(image1, image, Size(500, 500), 0, 0, INTER_LINEAR);
+	resize(image1.getImage(), image, Size(500, 500), 0, 0, INTER_LINEAR); //resize to window size
 	Mat gray;
 	cvtColor(image, gray, CV_BGR2GRAY);
+
 	threshold(gray, gray, 100, 255, THRESH_BINARY);
 	double t = 0;
 	t = (double)cvGetTickCount();
@@ -44,10 +52,10 @@ void detectRoadInImage(string imageDir) {
 	imshow("input image", image);
 	t = (double)cvGetTickCount() - t;
 	printf("road got detected in = %g ms\n", t / ((double)cvGetTickFrequency()*1000.));
-	cout << endl << "cheers" << endl;
 	imwrite("ROAD.jpg", image);
 	imwrite("ROAD_DETECTED.jpg", road_found);
 	waitKey(0);
+	*/
 }
 
 void detectRoadInCameraVideo() {
