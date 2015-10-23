@@ -1,4 +1,4 @@
-﻿Build started 23/10/2015 12:42:57.
+﻿Build started 23/10/2015 16:27:53.
      1>Project "C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\1stProject\1stProject.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /IC:\opencv\build\\include /Zi /nologo /W3 /WX- /sdl /O2 /Oi /GL /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Yc"stdafx.h" /Fp"x64\Release\1stProject.pch" /Fo"x64\Release\\" /Fd"x64\Release\vc140.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
@@ -7,6 +7,8 @@
          1stProject.cpp
          Camera.cpp
          FindRoad.cpp
+     1>FindRoad.cpp(53): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+     1>FindRoad.cpp(55): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
          Image.cpp
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\x64\Release\1stProject.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:C:\opencv\build\\x64\vc12\lib opencv_ts300.lib opencv_ts300d.lib opencv_world300.lib opencv_world300d.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\x64\Release\1stProject.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG:incremental /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\x64\Release\1stProject.lib" /MACHINE:X64 x64\Release\1stProject.obj
@@ -15,13 +17,11 @@
          x64\Release\Image.obj
          x64\Release\stdafx.obj
          Generating code
-         21 of 173 functions (12.1%) were compiled, the rest were copied from previous compilation.
-           0 functions were new in current compilation
-           4 functions had inline decision re-evaluated but remain unchanged
+         All 275 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
          Finished generating code
          1stProject.vcxproj -> C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\x64\Release\1stProject.exe
      1>Done Building Project "C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\1stProject\1stProject.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:03.68
+Time Elapsed 00:00:03.71

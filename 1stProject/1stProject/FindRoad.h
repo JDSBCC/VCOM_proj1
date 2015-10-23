@@ -6,25 +6,27 @@
 #include <stdio.h>
 #include <iostream>
 
+#define PI 3.1415926
+
 using namespace std;
 using namespace cv;
 
 class FindRoad
 {
 private:
-	Mat src, src_gray, detected_edges, dst;
-	int edgeThresh = 1;
-	int lowThreshold;
-	int const max_lowThreshold = 100;
-	int ratio = 3;
-	int kernel_size = 3;
-	char* window_name = "Edge Map";
+	Mat src, src_gray, detected_edges, dst, hough, houghP;
+	vector<Vec4i> lines;
 public:
 	FindRoad(Mat src);
 	~FindRoad();
 
 	//algorithms
 	void canny();
-	void cannyThreshold();
+	void houghTranform();
+	void probabilisticHoughTranform();
+	void houghTransformJoin();
+
+	//draws
+	void drawDetectedLines(Mat &image, Scalar color = Scalar(255));
 };
 

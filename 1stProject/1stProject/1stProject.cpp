@@ -20,42 +20,10 @@ void detectRoadInImage(string imageDir) {
 
 	FindRoad find = FindRoad(image1.getImage());
 	find.canny();
-	
-	/*
-	Mat image;
-	resize(image1.getImage(), image, Size(500, 500), 0, 0, INTER_LINEAR); //resize to window size
-	Mat gray;
-	cvtColor(image, gray, CV_BGR2GRAY);
-
-	threshold(gray, gray, 100, 255, THRESH_BINARY);
-	double t = 0;
-	t = (double)cvGetTickCount();
-	Mat Erode;
-	erode(gray, Erode, Mat(), Point(2, 2), 7);
-	Mat Dilate;
-	dilate(gray, Dilate, Mat(), Point(2, 2), 7);
-	threshold(Dilate, Dilate, 1, 50, THRESH_BINARY_INV);
-	Mat path_trace(gray.size(), CV_8U, Scalar(0));
-	path_trace = Erode + Dilate;
-
-	Mat path;
-	path_trace.convertTo(path, CV_32S);
-	namedWindow("founded road");
-	namedWindow("input image");
-
-	watershed(image, path);
-	path.convertTo(path, CV_8U);
-
-	Mat road_found = path;
-	road_found.convertTo(road_found, CV_8U);
-	imshow("founded road", road_found);
-	imshow("input image", image);
-	t = (double)cvGetTickCount() - t;
-	printf("road got detected in = %g ms\n", t / ((double)cvGetTickFrequency()*1000.));
-	imwrite("ROAD.jpg", image);
-	imwrite("ROAD_DETECTED.jpg", road_found);
+	find.houghTranform();
+	find.probabilisticHoughTranform();
+	find.houghTransformJoin();
 	waitKey(0);
-	*/
 }
 
 void detectRoadInCameraVideo() {
