@@ -30,5 +30,8 @@ public:
 
 	//draws
 	void drawDetectedLines(Mat &image, Scalar color = Scalar(255));
+
+	//line Simplification
+	void lineJoin();
 };
 

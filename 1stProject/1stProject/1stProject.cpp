@@ -15,12 +15,25 @@
 using namespace std;
 using namespace cv;
 
+void detectRoadInVideo(string imageDir) {
+	/*VideoCapture cap1 = VideoCapture(imageDir);
+	Mat frame;
+
+	while(&cap1.isOpened)
+
+	cap1 >> frame;
+	FindRoad find = FindRoad(frame);
+	//find.algorithm();
+	find.houghTransformJoin();
+	waitKey(0);*/
+}
+
 void detectRoadInImage(string imageDir) {
 	Image image1 = Image(imageDir);
 
 	FindRoad find = FindRoad(image1.getImage());
-	find.algorithm();
-	//find.houghTransformJoin();
+	//find.algorithm();
+	find.houghTransformJoin();
 	waitKey(0);
 }
 
@@ -41,8 +54,9 @@ int main(int argc, const char** argv)
 
 		cout << "What do yout want?" << endl;
 		cout << "1. Open an image" << endl;
-		cout << "2. Capture with camera" << endl;
-		cout << "3. Exit" << endl;
+		cout << "2. Open a video" << endl;
+		cout << "3. Capture with camera" << endl;
+		cout << "4. Exit" << endl;
 
 		cin >> option;
 
@@ -53,9 +67,14 @@ int main(int argc, const char** argv)
 			detectRoadInImage(dir);
 			break;
 		case 2:
-			detectRoadInCameraVideo();
+			cout << "Dir: ";
+			cin >> dir;
+			detectRoadInVideo(dir);
 			break;
 		case 3:
+			detectRoadInCameraVideo();
+			break;
+		case 4:
 			return 0;
 		}
 

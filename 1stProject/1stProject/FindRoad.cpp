@@ -36,8 +36,8 @@ void FindRoad::algorithm() {
 	//dilate(treshold_img, dilate_img, getStructuringElement(MORPH_RECT, Size(2, 2)));
 	//erode(dilate_img, erode_img, getStructuringElement(MORPH_RECT, Size(2, 2)));
 	//imshow("1.2. DilateWindow", treshold_img);
-	medianBlur(treshold_img, blur_img, 5);
-	imshow("2. BlurWindow", blur_img);
+	//medianBlur(treshold_img, blur_img, 5);
+	//imshow("2. BlurWindow", blur_img);
 
 	//canny algorithm
 	Canny(blur_img, detected_edges, 50, 250);
@@ -140,6 +140,7 @@ void FindRoad::houghTransformJoin() {
 	HoughLinesP(detected_edges, lines, 1, PI / 180, 4, 60, 10);
 	
 	// Set probabilistic Hough parameters
+	lineJoin();
 	drawDetectedLines(src);
 
 	imshow("5. Final", src);
@@ -159,4 +160,30 @@ void FindRoad::drawDetectedLines(Mat &image, Scalar color) {
 		line(image, pt1, pt2, color, 2);
 		++it2;
 	}
+}
+
+void FindRoad::lineJoin() {
+
+	vector<Vec4i> joinedLines;
+
+	vector<Vec4i>::const_iterator it2 = lines.begin();
+
+	while (it2 != lines.end()-1) {
+
+		Point pt1((*it2)[0], (*it2)[1]);
+		Point pt2((*it2)[2], (*it2)[3]);
+
+		++it2;
+
+		Point pt3((*it2)[0], (*it2)[1]);
+		Point pt4((*it2)[2], (*it2)[3]);
+
+		if (pt3.x < pt2.x+160 && pt3.x > pt2.x-160) {
+			joinedLines.push_back(Vec4i(pt1.x, pt1.y, pt4.x, pt4.y));
+		}
+
+
+	}
+	if(!joinedLines.empty())
+		lines = joinedLines;
 }
