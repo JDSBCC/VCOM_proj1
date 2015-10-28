@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "FindRoad.h"
+#include <math.h>
 
 
 FindRoad::FindRoad(Mat src){
@@ -140,7 +141,7 @@ void FindRoad::houghTransformJoin() {
 	HoughLinesP(detected_edges, lines, 1, PI / 180, 4, 60, 10);
 	
 	// Set probabilistic Hough parameters
-	lineJoin();
+	lineSeparator();
 	drawDetectedLines(src);
 
 	imshow("5. Final", src);
@@ -162,28 +163,102 @@ void FindRoad::drawDetectedLines(Mat &image, Scalar color) {
 	}
 }
 
-void FindRoad::lineJoin() {
+void FindRoad::lineSeparator() {
+	int count = 0;
 
-	vector<Vec4i> joinedLines;
+	vector<Vec4i> leftLines;
+	vector<Vec4i> rightLines;
 
 	vector<Vec4i>::const_iterator it2 = lines.begin();
 
-	while (it2 != lines.end()-1) {
+	while (it2 != lines.end()) {
 
 		Point pt1((*it2)[0], (*it2)[1]);
 		Point pt2((*it2)[2], (*it2)[3]);
 
-		++it2;
+		Point vec(pt1.x-pt2.x, pt1.y-pt2.y);
 
-		Point pt3((*it2)[0], (*it2)[1]);
-		Point pt4((*it2)[2], (*it2)[3]);
+		double m = (double)vec.y / (double)vec.x;
 
-		if (pt3.x < pt2.x+160 && pt3.x > pt2.x-160) {
-			joinedLines.push_back(Vec4i(pt1.x, pt1.y, pt4.x, pt4.y));
+		count++;
+
+		if (m > 0.0) {
+			cout << "left = " << m << " count = " << count << endl;
+			leftLines.push_back((*it2));
+		}else {
+			cout << "right = " << m << " count = " << count << endl;
+			rightLines.push_back((*it2));
 		}
 
-
+		++it2;
 	}
-	if(!joinedLines.empty())
-		lines = joinedLines;
+
+	Point meanBeginLeft, meanBeginRight;
+	Point meanEndLeft, meanEndRight;
+	Point intPoint;
+
+	cout << "left" << endl;
+	lineStretch(leftLines, meanBeginLeft, meanEndLeft);
+	cout << "right" << endl;
+	lineStretch(rightLines, meanBeginRight, meanEndRight);
+
+	getIntersectionPoint(meanBeginLeft, meanEndLeft, meanBeginRight, meanEndRight, intPoint);
+	cout << "intPoint => " << "x = " << intPoint.x << "; y = " << intPoint.y << endl;
+
+	vector<Vec4i> extendedLines;
+	extendedLines.push_back(Vec4i(meanBeginLeft.x, meanBeginLeft.y, intPoint.x, intPoint.y));
+	extendedLines.push_back(Vec4i(meanBeginRight.x, meanBeginRight.y, intPoint.x, intPoint.y));
+
+	if (!extendedLines.empty())
+		lines = extendedLines;
+}
+
+void FindRoad::lineStretch(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd) {
+	vector<Vec4i>::const_iterator it2 = linesSeparated.begin();
+
+	Point sumBegin(0,0), sumEnd(0,0);
+	meanBegin=Point(0, 0);
+	meanEnd=Point(0, 0);
+	int count = 0;
+
+	while (it2 != linesSeparated.end()) {
+
+		Point pt1((*it2)[0], (*it2)[1]);
+		Point pt2((*it2)[2], (*it2)[3]);
+
+		sumBegin.x += pt1.x;
+		sumBegin.y += pt1.y;
+		sumEnd.x += pt2.x;
+		sumEnd.y += pt2.y;
+
+		count++;
+		++it2;
+	}
+
+	meanBegin.x = sumBegin.x / count;
+	meanBegin.y = sumBegin.y / count;
+	meanEnd.x = sumEnd.x / count;
+	meanEnd.y = sumEnd.y / count;
+
+	cout <<"Begin => "<< "x = " << meanBegin.x << "; y = " << meanBegin.y << endl;
+	cout <<"End => "<< "x = " << meanEnd.x << "; y = " << meanEnd.y << endl;
+}
+
+double FindRoad::cross(Point v1, Point v2) {
+	return v1.x*v2.y - v1.y*v2.x;
+}
+
+bool FindRoad::getIntersectionPoint(Point a1, Point a2, Point b1, Point b2, Point & intPnt) {
+	Point p = a1;
+	Point q = b1;
+	Point r(a2 - a1);
+	Point s(b2 - b1);
+
+	if (cross(r, s) == 0) { return false; }
+
+	double t = cross(q - p, s) / cross(r, s);
+
+	intPnt = p + t*r;
+
+	return true;
 }

@@ -19,6 +19,7 @@ private:
 public:
 	FindRoad(Mat src);
 	~FindRoad();
+	double distance(double dX0, double dY0, double dX1, double dY1);
 	void turnGray();
 	void cut();
 
@@ -32,6 +33,11 @@ public:
 	void drawDetectedLines(Mat &image, Scalar color = Scalar(255));
 
 	//line Simplification
-	void lineJoin();
+	void lineSeparator();
+	void lineStretch(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd);
+
+	//utilities
+	double cross(Point v1, Point v2);
+	bool getIntersectionPoint(Point a1, Point a2, Point b1, Point b2, Point & intPnt);
 };
 
