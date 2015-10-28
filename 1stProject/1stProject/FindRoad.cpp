@@ -32,8 +32,11 @@ void FindRoad::algorithm() {
 	imshow("1. TresholdWindow", treshold_img);
 
 	//remove noise with blur
-	//erode(treshold_img, erode_img, getStructuringElement(MORPH_RECT, Size(2, 2)));
-	medianBlur(treshold_img, blur_img, 7);
+	//Mat dilate_img;
+	//dilate(treshold_img, dilate_img, getStructuringElement(MORPH_RECT, Size(2, 2)));
+	//erode(dilate_img, erode_img, getStructuringElement(MORPH_RECT, Size(2, 2)));
+	//imshow("1.2. DilateWindow", treshold_img);
+	medianBlur(treshold_img, blur_img, 5);
 	imshow("2. BlurWindow", blur_img);
 
 	//canny algorithm
@@ -74,7 +77,7 @@ void FindRoad::houghTranform(Mat img) {
 	Mat result(src.size(), CV_8U, Scalar(255));
 	src.copyTo(result);
 
-	// Draw the lines
+	//draw the lines
 	vector<Vec2f>::const_iterator it = lines.begin();
 	hough = Mat(src.size(), CV_8U, Scalar(0));
 	while (it != lines.end()) {
