@@ -57,17 +57,6 @@ void FindRoad::algorithm() {
 	lines.clear();
 }
 
-void FindRoad::canny() {
-
-	turnGray();
-
-	Canny(src_gray, detected_edges, 50, 250);
-
-	threshold(detected_edges, dst, 128, 255, THRESH_BINARY_INV);
-
-	imshow("Canny Window", detected_edges);
-}
-
 void FindRoad::houghTranform(Mat img) {
 
 	int houghVote = 200;
@@ -106,9 +95,6 @@ void FindRoad::houghTranform(Mat img) {
 		//std::cout << "line: (" << rho << "," << theta << ")\n"; 
 		++it;
 	}
-
-	// Display the detected line image
-	imshow("Hough Transform", result);
 }
 
 void FindRoad::probabilisticHoughTranform(Mat img) {
@@ -119,23 +105,31 @@ void FindRoad::probabilisticHoughTranform(Mat img) {
 	houghP = Mat(src.size(), CV_8U, Scalar(0));
 
 	drawDetectedLines(houghP);
-
-	imshow("Probabilistic Hough Transform", houghP);
 }
 
 void FindRoad::houghTransformJoin() {
 
-	canny();
+	//turn image in a gray scale
+	turnGray();
+
+	//canny algorithm
+	Canny(src_gray, detected_edges, 50, 250);
+	imshow("1. CannyWindow", detected_edges);
+
+	//Hough Transform algorithm
 	houghTranform(detected_edges);
+	imshow("2. HoughTransformWindow", hough);
+
+	//Probabilistic Hough Transform algorithm
 	probabilisticHoughTranform(detected_edges);
+	imshow("3. ProbabilisticHoughTransformWindow", houghP);
 	
 	// bitwise AND of the two hough images
 	bitwise_and(houghP, hough, houghP);
 	Mat houghPinv=Mat(src.size(), CV_8U, Scalar(0));
 	dst = Mat(src.size(), CV_8U, Scalar(0));
 	threshold(houghP, houghPinv, 150, 255, THRESH_BINARY_INV); // threshold and invert to black lines
-
-	imshow("Hough Transform Join", houghPinv);
+	imshow("4. HoughTransformJoinWindow", houghPinv);
 	
 	//canny
 	Canny(houghPinv, detected_edges, 100, 350);
@@ -145,7 +139,7 @@ void FindRoad::houghTransformJoin() {
 	// Set probabilistic Hough parameters
 	drawDetectedLines(src);
 
-	imshow("Final", src);
+	imshow("5. Final", src);
 	lines.clear();
 }
 

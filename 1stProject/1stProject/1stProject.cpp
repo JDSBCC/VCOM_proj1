@@ -19,8 +19,8 @@ void detectRoadInImage(string imageDir) {
 	Image image1 = Image(imageDir);
 
 	FindRoad find = FindRoad(image1.getImage());
-	//find.algorithm();
-	find.houghTransformJoin();
+	find.algorithm();
+	//find.houghTransformJoin();
 	waitKey(0);
 }
 

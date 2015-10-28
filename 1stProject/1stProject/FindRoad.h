@@ -23,7 +23,6 @@ public:
 	void cut();
 
 	//algorithms
-	void canny();
 	void houghTranform(Mat img);
 	void probabilisticHoughTranform(Mat img);
 	void houghTransformJoin();
