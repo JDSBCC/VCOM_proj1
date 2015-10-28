@@ -12,18 +12,63 @@ FindRoad::~FindRoad()
 {
 }
 
+void FindRoad::turnGray() {
+	cvtColor(src, src_gray, CV_BGR2GRAY);
+}
+
+void FindRoad::cut() {
+	Mat mask = Mat::zeros(src_gray.size(), CV_8UC1);
+	rectangle(mask, Point(0, src_gray.size().height / 2), Point(src_gray.size().width, src_gray.size().height), Scalar(255, 255, 255), CV_FILLED);
+	src_gray.copyTo(cuted_image, mask);
+}
+
+void FindRoad::algorithm() {
+
+	//turn image in a gray scale
+	cvtColor(src, src_gray, CV_BGR2GRAY);
+
+	//Treshold to get the lines of street
+	adaptiveThreshold(src_gray, treshold_img, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_MEAN_C, 11, -1.5);
+	imshow("1. TresholdWindow", treshold_img);
+
+	//remove noise with blur
+	//erode(treshold_img, erode_img, getStructuringElement(MORPH_RECT, Size(2, 2)));
+	medianBlur(treshold_img, blur_img, 7);
+	imshow("2. BlurWindow", blur_img);
+
+	//canny algorithm
+	Canny(blur_img, detected_edges, 50, 250);
+	imshow("3. CannyWindow", detected_edges);
+
+	//probabilistic hough transform algorithm
+	probabilisticHoughTranform(detected_edges);
+	imshow("4. HoughTransformWindow", houghP);
+
+	//draw lines with original image
+	Mat houghPinv = Mat(src.size(), CV_8U, Scalar(0));
+	threshold(houghP, houghPinv, 150, 255, THRESH_BINARY_INV);
+
+	Canny(houghPinv, detected_edges, 100, 350);
+	lines.clear();
+	HoughLinesP(detected_edges, lines, 1, PI / 180, 4, 60, 10);
+
+	drawDetectedLines(src);
+	imshow("5. Final", src);
+	lines.clear();
+}
+
 void FindRoad::canny() {
 
-	cvtColor(src, src_gray, CV_BGR2GRAY);
+	turnGray();
 
 	Canny(src_gray, detected_edges, 50, 250);
 
 	threshold(detected_edges, dst, 128, 255, THRESH_BINARY_INV);
 
-	imshow("Canny Window", dst);
+	imshow("Canny Window", detected_edges);
 }
 
-void FindRoad::houghTranform() {
+void FindRoad::houghTranform(Mat img) {
 
 	int houghVote = 200;
 
@@ -33,7 +78,7 @@ void FindRoad::houghTranform() {
 	}
 	else { houghVote += 25; }
 	while (lines.size() < 5 && houghVote > 0) {
-		HoughLines(detected_edges, lines, 1, PI / 180, houghVote);
+		HoughLines(img, lines, 1, PI / 180, houghVote);
 		houghVote -= 5;
 	}
 	cout << houghVote << "\n";
@@ -66,10 +111,10 @@ void FindRoad::houghTranform() {
 	imshow("Hough Transform", result);
 }
 
-void FindRoad::probabilisticHoughTranform() {
+void FindRoad::probabilisticHoughTranform(Mat img) {
 	// Detect lines
 	lines.clear();
-	HoughLinesP(detected_edges, lines, 1, PI/180, 4, 60, 10);
+	HoughLinesP(img, lines, 1, PI/180, 4, 60, 10);
 
 	houghP = Mat(src.size(), CV_8U, Scalar(0));
 
@@ -79,6 +124,10 @@ void FindRoad::probabilisticHoughTranform() {
 }
 
 void FindRoad::houghTransformJoin() {
+
+	canny();
+	houghTranform(detected_edges);
+	probabilisticHoughTranform(detected_edges);
 	
 	// bitwise AND of the two hough images
 	bitwise_and(houghP, hough, houghP);

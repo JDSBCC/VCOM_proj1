@@ -14,17 +14,20 @@ using namespace cv;
 class FindRoad
 {
 private:
-	Mat src, src_gray, detected_edges, dst, hough, houghP;
+	Mat src, src_gray, detected_edges, dst, hough, houghP, cuted_image, blur_img, erode_img, treshold_img;
 	vector<Vec4i> lines;
 public:
 	FindRoad(Mat src);
 	~FindRoad();
+	void turnGray();
+	void cut();
 
 	//algorithms
 	void canny();
-	void houghTranform();
-	void probabilisticHoughTranform();
+	void houghTranform(Mat img);
+	void probabilisticHoughTranform(Mat img);
 	void houghTransformJoin();
+	void algorithm();
 
 	//draws
 	void drawDetectedLines(Mat &image, Scalar color = Scalar(255));
