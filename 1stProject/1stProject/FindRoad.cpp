@@ -74,7 +74,6 @@ void FindRoad::houghTranform(Mat img) {
 		HoughLines(img, lines, 1, PI / 180, houghVote);
 		houghVote -= 5;
 	}
-	cout << houghVote << "\n";
 	Mat result(src.size(), CV_8U, Scalar(255));
 	src.copyTo(result);
 
@@ -95,8 +94,6 @@ void FindRoad::houghTranform(Mat img) {
 			line(result, pt1, pt2, Scalar(255), 2);
 			line(hough, pt1, pt2, Scalar(255), 2);
 		}
-
-		//std::cout << "line: (" << rho << "," << theta << ")\n"; 
 		++it;
 	}
 }
@@ -148,6 +145,39 @@ void FindRoad::houghTransformJoin() {
 	lines.clear();
 }
 
+Mat FindRoad::houghTransformJoinVideo() {
+
+	//turn image in a gray scale
+	turnGray();
+
+	//canny algorithm
+	Canny(src_gray, detected_edges, 50, 250);
+
+	//Hough Transform algorithm
+	houghTranform(detected_edges);
+
+	//Probabilistic Hough Transform algorithm
+	probabilisticHoughTranform(detected_edges);
+
+	// bitwise AND of the two hough images
+	bitwise_and(houghP, hough, houghP);
+	Mat houghPinv = Mat(src.size(), CV_8U, Scalar(0));
+	dst = Mat(src.size(), CV_8U, Scalar(0));
+	threshold(houghP, houghPinv, 150, 255, THRESH_BINARY_INV); // threshold and invert to black lines
+
+	//canny
+	Canny(houghPinv, detected_edges, 100, 350);
+	lines.clear();
+	HoughLinesP(detected_edges, lines, 1, PI / 180, 4, 60, 10);
+
+	// Set probabilistic Hough parameters
+	lineSeparator();
+	drawDetectedLines(src);
+	lines.clear();
+
+	return src;
+}
+
 void FindRoad::drawDetectedLines(Mat &image, Scalar color) {
 
 	// Draw the lines
@@ -165,6 +195,8 @@ void FindRoad::drawDetectedLines(Mat &image, Scalar color) {
 
 void FindRoad::lineSeparator() {
 	int count = 0;
+	double temp_m = 0;
+	double m = 0;
 
 	vector<Vec4i> leftLines;
 	vector<Vec4i> rightLines;
@@ -178,42 +210,54 @@ void FindRoad::lineSeparator() {
 
 		Point vec(pt1.x-pt2.x, pt1.y-pt2.y);
 
-		double m = (double)vec.y / (double)vec.x;
+		temp_m = m;
+		m = (double)vec.y / (double)vec.x;
 
 		count++;
 
 		if (m > 0.0) {
-			cout << "left = " << m << " count = " << count << endl;
-			leftLines.push_back((*it2));
+			if(it2==lines.begin()){
+				leftLines.push_back((*it2));
+			} else if (abs(temp_m-m)<=1) {
+				leftLines.push_back((*it2));
+			}
 		}else {
-			cout << "right = " << m << " count = " << count << endl;
-			rightLines.push_back((*it2));
+			if (it2 == lines.begin()) {
+				rightLines.push_back((*it2));
+			}
+			else if (abs(temp_m - m) <= 1) {
+				rightLines.push_back((*it2));
+			}
 		}
-
 		++it2;
 	}
 
 	Point meanBeginLeft, meanBeginRight;
 	Point meanEndLeft, meanEndRight;
-	Point intPoint;
+	Point intPoint, downPointLeft, downPointRight;
 
-	cout << "left" << endl;
-	lineStretch(leftLines, meanBeginLeft, meanEndLeft);
-	cout << "right" << endl;
-	lineStretch(rightLines, meanBeginRight, meanEndRight);
+	if (!leftLines.empty() && !rightLines.empty()) {
+		lineStretchUp(leftLines, meanBeginLeft, meanEndLeft);
+		lineStretchUp(rightLines, meanBeginRight, meanEndRight);
 
-	getIntersectionPoint(meanBeginLeft, meanEndLeft, meanBeginRight, meanEndRight, intPoint);
-	cout << "intPoint => " << "x = " << intPoint.x << "; y = " << intPoint.y << endl;
+		getIntersectionPoint(meanBeginLeft, meanEndLeft, meanBeginRight, meanEndRight, intPoint);
 
-	vector<Vec4i> extendedLines;
-	extendedLines.push_back(Vec4i(meanBeginLeft.x, meanBeginLeft.y, intPoint.x, intPoint.y));
-	extendedLines.push_back(Vec4i(meanBeginRight.x, meanBeginRight.y, intPoint.x, intPoint.y));
+		//extend lines
+		lineStretchDown(meanBeginLeft, intPoint, meanBeginRight, intPoint, downPointLeft, downPointRight);
 
-	if (!extendedLines.empty())
-		lines = extendedLines;
+		vector<Vec4i> extendedLines;
+		extendedLines.push_back(Vec4i(downPointLeft.x, downPointLeft.y, intPoint.x, intPoint.y));
+		extendedLines.push_back(Vec4i(downPointRight.x, downPointRight.y, intPoint.x, intPoint.y));
+
+		if (!extendedLines.empty())
+			lines = extendedLines;
+
+		//show intersection point
+		circle(src, intPoint, 8, Scalar(0, 255, 255), 3);
+	}
 }
 
-void FindRoad::lineStretch(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd) {
+void FindRoad::lineStretchUp(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd) {
 	vector<Vec4i>::const_iterator it2 = linesSeparated.begin();
 
 	Point sumBegin(0,0), sumEnd(0,0);
@@ -239,9 +283,31 @@ void FindRoad::lineStretch(vector<Vec4i> linesSeparated, Point & meanBegin, Poin
 	meanBegin.y = sumBegin.y / count;
 	meanEnd.x = sumEnd.x / count;
 	meanEnd.y = sumEnd.y / count;
+}
 
-	cout <<"Begin => "<< "x = " << meanBegin.x << "; y = " << meanBegin.y << endl;
-	cout <<"End => "<< "x = " << meanEnd.x << "; y = " << meanEnd.y << endl;
+void FindRoad::lineStretchDown(Point lup, Point ldown, Point rup, Point rdown, Point & dpl, Point & dpr) {
+	double ml = (double)(lup.y - ldown.y) / (double)(lup.x - ldown.x);
+	double bl = lup.y - ml*lup.x;
+	double xl = (src.size().height - bl) / ml;
+	double yl = bl;
+
+	double mr = (double)(rup.y - rdown.y) / (double)(rup.x - rdown.x);
+	double br = rup.y - mr*rup.x;
+	double xr = (src.size().height - br) / mr;
+	double yr = mr*src.size().width + br;
+
+	if (xl>=0) {
+		dpl = Point(xl, src.size().height);
+	}else {
+		dpl = Point(0, yl);
+	}
+
+	if (xr <= src.size().width ) {
+		dpr = Point(xr, src.size().height);
+	}
+	else {
+		dpr = Point(src.size().width, yr);
+	}
 }
 
 double FindRoad::cross(Point v1, Point v2) {

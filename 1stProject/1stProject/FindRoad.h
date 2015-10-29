@@ -19,7 +19,6 @@ private:
 public:
 	FindRoad(Mat src);
 	~FindRoad();
-	double distance(double dX0, double dY0, double dX1, double dY1);
 	void turnGray();
 	void cut();
 
@@ -27,6 +26,7 @@ public:
 	void houghTranform(Mat img);
 	void probabilisticHoughTranform(Mat img);
 	void houghTransformJoin();
+	Mat houghTransformJoinVideo();
 	void algorithm();
 
 	//draws
@@ -34,7 +34,8 @@ public:
 
 	//line Simplification
 	void lineSeparator();
-	void lineStretch(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd);
+	void lineStretchUp(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd);
+	void lineStretchDown(Point lx, Point ly, Point rx, Point ry, Point & dpl, Point & dpr);
 
 	//utilities
 	double cross(Point v1, Point v2);

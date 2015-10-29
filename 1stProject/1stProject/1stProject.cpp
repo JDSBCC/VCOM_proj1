@@ -16,16 +16,21 @@ using namespace std;
 using namespace cv;
 
 void detectRoadInVideo(string imageDir) {
-	/*VideoCapture cap1 = VideoCapture(imageDir);
-	Mat frame;
+	VideoCapture cap = VideoCapture(imageDir);
 
-	while(&cap1.isOpened)
+	namedWindow("video", 1);
+	while (cap.isOpened()) {
 
-	cap1 >> frame;
-	FindRoad find = FindRoad(frame);
-	//find.algorithm();
-	find.houghTransformJoin();
-	waitKey(0);*/
+		Mat frame;
+		cap >> frame;
+
+		FindRoad find = FindRoad(frame);
+		Mat final = find.houghTransformJoinVideo();
+
+		imshow("video", final);
+
+		if (waitKey(30) >= 0) break;
+	}
 }
 
 void detectRoadInImage(string imageDir) {
