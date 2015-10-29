@@ -14,7 +14,7 @@ using namespace cv;
 class FindRoad
 {
 private:
-	Mat src, src_gray, detected_edges, dst, hough, houghP, cuted_image, blur_img, erode_img, treshold_img;
+	Mat src, src_gray, detected_edges, dst, hough, houghP, cut_image, blur_img, erode_img, treshold_img;
 	vector<Vec4i> lines;
 public:
 	FindRoad(Mat src);

@@ -20,7 +20,7 @@ void FindRoad::turnGray() {
 void FindRoad::cut() {
 	Mat mask = Mat::zeros(src_gray.size(), CV_8UC1);
 	rectangle(mask, Point(0, src_gray.size().height / 2), Point(src_gray.size().width, src_gray.size().height), Scalar(255, 255, 255), CV_FILLED);
-	src_gray.copyTo(cuted_image, mask);
+	src_gray.copyTo(cut_image, mask);
 }
 
 void FindRoad::algorithm() {
@@ -112,6 +112,7 @@ void FindRoad::houghTransformJoin() {
 
 	//turn image in a gray scale
 	turnGray();
+	imshow("0. GrayWindow", src_gray);
 
 	//canny algorithm
 	Canny(src_gray, detected_edges, 50, 250);
@@ -150,8 +151,11 @@ Mat FindRoad::houghTransformJoinVideo() {
 	//turn image in a gray scale
 	turnGray();
 
+	//cut image
+	cut();
+
 	//canny algorithm
-	Canny(src_gray, detected_edges, 50, 250);
+	Canny(cut_image, detected_edges, 50, 250);
 
 	//Hough Transform algorithm
 	houghTranform(detected_edges);
