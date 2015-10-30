@@ -8,73 +8,49 @@ FindRoad::FindRoad(Mat src){
 	resize(this->src, this->src, Size(500, 500), 0, 0, INTER_LINEAR); //resize to window size
 }
 
+FindRoad::FindRoad(String videoDir) {
+	VideoCapture cap = VideoCapture(videoDir);
+
+	namedWindow("video", 1);
+	while (cap.isOpened()) {
+
+		Mat frame;
+		cap >> frame;
+
+		src = frame;
+		houghTransformJoinVideo();
+
+		imshow("video", src);
+
+		if (waitKey(30) >= 0) break;
+	}
+}
+
 
 FindRoad::~FindRoad()
 {
 }
 
-void FindRoad::turnGray() {
-	cvtColor(src, src_gray, CV_BGR2GRAY);
-}
-
 void FindRoad::cut() {
-	Mat mask = Mat::zeros(src_gray.size(), CV_8UC1);
-	rectangle(mask, Point(0, src_gray.size().height / 2), Point(src_gray.size().width, src_gray.size().height), Scalar(255, 255, 255), CV_FILLED);
-	src_gray.copyTo(cut_image, mask);
-}
-
-void FindRoad::algorithm() {
-
-	//turn image in a gray scale
-	cvtColor(src, src_gray, CV_BGR2GRAY);
-
-	//Treshold to get the lines of street
-	adaptiveThreshold(src_gray, treshold_img, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_MEAN_C, 11, -1.5);
-	imshow("1. TresholdWindow", treshold_img);
-
-	//remove noise with blur
-	//Mat dilate_img;
-	//dilate(treshold_img, dilate_img, getStructuringElement(MORPH_RECT, Size(2, 2)));
-	//erode(dilate_img, erode_img, getStructuringElement(MORPH_RECT, Size(2, 2)));
-	//imshow("1.2. DilateWindow", treshold_img);
-	//medianBlur(treshold_img, blur_img, 5);
-	//imshow("2. BlurWindow", blur_img);
-
-	//canny algorithm
-	Canny(blur_img, detected_edges, 50, 250);
-	imshow("3. CannyWindow", detected_edges);
-
-	//probabilistic hough transform algorithm
-	probabilisticHoughTranform(detected_edges);
-	imshow("4. HoughTransformWindow", houghP);
-
-	//draw lines with original image
-	Mat houghPinv = Mat(src.size(), CV_8U, Scalar(0));
-	threshold(houghP, houghPinv, 150, 255, THRESH_BINARY_INV);
-
-	Canny(houghPinv, detected_edges, 100, 350);
-	lines.clear();
-	HoughLinesP(detected_edges, lines, 1, PI / 180, 4, 60, 10);
-
-	drawDetectedLines(src);
-	imshow("5. Final", src);
-	lines.clear();
+	Mat mask = Mat::zeros(src.size(), CV_8UC1);
+	rectangle(mask, Point(0, src.size().height / 2), Point(src.size().width, src.size().height), Scalar(255, 255, 255), CV_FILLED);
+	src.copyTo(cut_image, mask);
 }
 
 void FindRoad::houghTranform(Mat img) {
 
-	int houghVote = 200;
+	int houghVote = 70;
 
 	vector<Vec2f> lines;
 	if (houghVote < 1 || lines.size() > 2) { // we lost all lines. reset
-		houghVote = 200;
+		houghVote = 70;
 	}
 	else { houghVote += 25; }
 	while (lines.size() < 5 && houghVote > 0) {
 		HoughLines(img, lines, 1, PI / 180, houghVote);
 		houghVote -= 5;
 	}
-	Mat result(src.size(), CV_8U, Scalar(255));
+	Mat result(img.size(), CV_8U, Scalar(255));
 	src.copyTo(result);
 
 	//draw the lines
@@ -85,12 +61,12 @@ void FindRoad::houghTranform(Mat img) {
 		float rho = (*it)[0];   // first element is distance rho
 		float theta = (*it)[1]; // second element is angle theta
 
-		if (theta > 0.09 && theta < 1.48 || theta < 3.14 && theta > 1.66) { // filter to remove vertical and horizontal lines
+		if (theta > 0.09 && theta < 1.35 || theta < 3.14 && theta > 1.80) { // filter to remove vertical and horizontal lines
 			// point of intersection of the line with first row
 			Point pt1(rho / cos(theta), 0);
 			// point of intersection of the line with last row
 			Point pt2((rho - result.rows*sin(theta)) / cos(theta), result.rows);
-			// draw a white line
+			// draw a line
 			line(result, pt1, pt2, Scalar(255), 2);
 			line(hough, pt1, pt2, Scalar(255), 2);
 		}
@@ -106,32 +82,56 @@ void FindRoad::probabilisticHoughTranform(Mat img) {
 	houghP = Mat(src.size(), CV_8U, Scalar(0));
 
 	drawDetectedLines(houghP);
+	lines.clear();
 }
 
 void FindRoad::houghTransformJoin() {
 
+	//cut image
+	cut();
+	imshow("1. CutWindow", cut_image);
+	
+	//white and yellow segmentation
+	cvtColor(cut_image, hsv_image, CV_BGR2HSV);
+	inRange(hsv_image, Scalar(0, 0, 0), Scalar(180, 50, 255), white_lines);//white lines
+	inRange(hsv_image, Scalar(18, 102, 204), Scalar(26, 255, 255), yellow_lines);//yellow lines
+	bitwise_or(yellow_lines, white_lines, removeBack);
+	cut_image.copyTo(removed, removeBack);
+	imshow("2. RemoveBackgroundWindow", removed);
+
+	//erode - dilate
+	/*erode(removed, treshold_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+	dilate(treshold_img, treshold_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+	dilate(treshold_img, treshold_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+	erode(treshold_img, treshold_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+	imshow("ThresholdWindow", treshold_img);*/
+
 	//turn image in a gray scale
-	turnGray();
-	imshow("0. GrayWindow", src_gray);
+	cvtColor(removed, src_gray, CV_BGR2GRAY);
+	imshow("3. GrayWindow", src_gray);
 
 	//canny algorithm
-	Canny(src_gray, detected_edges, 50, 250);
-	imshow("1. CannyWindow", detected_edges);
+	//erode(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)));
+	dilate(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+	medianBlur(erode_img, blur_img, 5);
+	imshow("ErodeBlurWindow", blur_img);
+	Canny(blur_img, detected_edges, 50, 400);
+	imshow("4. CannyWindow", detected_edges);
 
 	//Hough Transform algorithm
 	houghTranform(detected_edges);
-	imshow("2. HoughTransformWindow", hough);
+	imshow("5. HoughTransformWindow", hough);
 
 	//Probabilistic Hough Transform algorithm
 	probabilisticHoughTranform(detected_edges);
-	imshow("3. ProbabilisticHoughTransformWindow", houghP);
+	imshow("6. ProbabilisticHoughTransformWindow", houghP);
 	
 	// bitwise AND of the two hough images
 	bitwise_and(houghP, hough, houghP);
 	Mat houghPinv=Mat(src.size(), CV_8U, Scalar(0));
 	dst = Mat(src.size(), CV_8U, Scalar(0));
 	threshold(houghP, houghPinv, 150, 255, THRESH_BINARY_INV); // threshold and invert to black lines
-	imshow("4. HoughTransformJoinWindow", houghPinv);
+	imshow("7. HoughTransformJoinWindow", houghPinv);
 	
 	//canny
 	Canny(houghPinv, detected_edges, 100, 350);
@@ -142,20 +142,30 @@ void FindRoad::houghTransformJoin() {
 	lineSeparator();
 	drawDetectedLines(src);
 
-	imshow("5. Final", src);
+	imshow("8. Final", src);
 	lines.clear();
 }
 
 Mat FindRoad::houghTransformJoinVideo() {
 
-	//turn image in a gray scale
-	turnGray();
-
 	//cut image
 	cut();
 
+	//white and yellow segmentation
+	cvtColor(cut_image, hsv_image, CV_BGR2HSV);
+	inRange(hsv_image, Scalar(0, 0, 0), Scalar(180, 50, 255), white_lines);//white lines
+	inRange(hsv_image, Scalar(18, 102, 204), Scalar(26, 255, 255), yellow_lines);//yellow lines
+	bitwise_or(yellow_lines, white_lines, removeBack);
+	cut_image.copyTo(removed, removeBack);
+
+	//turn image in a gray scale
+	cvtColor(removed, src_gray, CV_BGR2GRAY);
+
 	//canny algorithm
-	Canny(cut_image, detected_edges, 50, 250);
+	//erode(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)));
+	dilate(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+	medianBlur(erode_img, blur_img, 5);
+	Canny(blur_img, detected_edges, 50, 400);
 
 	//Hough Transform algorithm
 	houghTranform(detected_edges);
@@ -253,8 +263,19 @@ void FindRoad::lineSeparator() {
 		extendedLines.push_back(Vec4i(downPointLeft.x, downPointLeft.y, intPoint.x, intPoint.y));
 		extendedLines.push_back(Vec4i(downPointRight.x, downPointRight.y, intPoint.x, intPoint.y));
 
-		if (!extendedLines.empty())
+		if (!extendedLines.empty()) {
+			oldLines = extendedLines;
+			lines.clear();
 			lines = extendedLines;
+		}
+
+		//show intersection point
+		circle(src, intPoint, 8, Scalar(0, 255, 255), 3);
+	}else {
+		if (!oldLines.empty()) {
+			lines.clear();
+			lines = oldLines;
+		}
 
 		//show intersection point
 		circle(src, intPoint, 8, Scalar(0, 255, 255), 3);

@@ -14,12 +14,27 @@ using namespace cv;
 class FindRoad
 {
 private:
-	Mat src, src_gray, detected_edges, dst, hough, houghP, cut_image, blur_img, erode_img, treshold_img;
+	Mat src, src_gray,
+		detected_edges,
+		dst,
+		hough,
+		houghP,
+		cut_image,
+		blur_img,
+		erode_img,
+		threshold_img,
+		white_lines,
+		yellow_lines,
+		hsv_image,
+		removeBack,
+		removed;
 	vector<Vec4i> lines;
+	vector<Vec4i> oldLines;
 public:
+
 	FindRoad(Mat src);
+	FindRoad(String videoDir);
 	~FindRoad();
-	void turnGray();
 	void cut();
 
 	//algorithms
@@ -27,7 +42,6 @@ public:
 	void probabilisticHoughTranform(Mat img);
 	void houghTransformJoin();
 	Mat houghTransformJoinVideo();
-	void algorithm();
 
 	//draws
 	void drawDetectedLines(Mat &image, Scalar color = Scalar(255));
