@@ -36,6 +36,8 @@ public:
 	FindRoad(String videoDir);
 	~FindRoad();
 	void cut();
+	void setLinesWithMoreWhitePixels(vector<Vec4i> & lines);
+	int getColorCount(Point p);
 
 	//algorithms
 	void houghTranform(Mat img);
@@ -48,8 +50,8 @@ public:
 
 	//line Simplification
 	void lineSeparator();
-	void lineStretchUp(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd);
-	void lineStretchDown(Point lx, Point ly, Point rx, Point ry, Point & dpl, Point & dpr);
+	void lineStretch(Point lx, Point ly, Point rx, Point ry, Point & dpl, Point & dpr);
+	void lineAverage(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd);
 
 	//utilities
 	double cross(Point v1, Point v2);

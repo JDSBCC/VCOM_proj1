@@ -61,14 +61,14 @@ void FindRoad::houghTranform(Mat img) {
 		float rho = (*it)[0];   // first element is distance rho
 		float theta = (*it)[1]; // second element is angle theta
 
-		if (theta > 0.09 && theta < 1.35 || theta < 3.14 && theta > 1.80) { // filter to remove vertical and horizontal lines
+		if (theta > 0.09 && theta < 1.48 || theta < 3.14 && theta > 1.66) { // filter to remove vertical and horizontal lines
 			// point of intersection of the line with first row
 			Point pt1(rho / cos(theta), 0);
 			// point of intersection of the line with last row
 			Point pt2((rho - result.rows*sin(theta)) / cos(theta), result.rows);
 			// draw a line
-			line(result, pt1, pt2, Scalar(255), 2);
-			line(hough, pt1, pt2, Scalar(255), 2);
+			line(result, pt1, pt2, Scalar(255),2);
+			line(hough, pt1, pt2, Scalar(255),2);
 		}
 		++it;
 	}
@@ -82,7 +82,6 @@ void FindRoad::probabilisticHoughTranform(Mat img) {
 	houghP = Mat(src.size(), CV_8U, Scalar(0));
 
 	drawDetectedLines(houghP);
-	lines.clear();
 }
 
 void FindRoad::houghTransformJoin() {
@@ -99,39 +98,32 @@ void FindRoad::houghTransformJoin() {
 	cut_image.copyTo(removed, removeBack);
 	imshow("2. RemoveBackgroundWindow", removed);
 
-	//erode - dilate
-	/*erode(removed, treshold_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
-	dilate(treshold_img, treshold_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
-	dilate(treshold_img, treshold_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
-	erode(treshold_img, treshold_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
-	imshow("ThresholdWindow", treshold_img);*/
-
 	//turn image in a gray scale
 	cvtColor(removed, src_gray, CV_BGR2GRAY);
 	imshow("3. GrayWindow", src_gray);
 
-	//canny algorithm
-	//erode(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)));
 	dilate(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 	medianBlur(erode_img, blur_img, 5);
-	imshow("ErodeBlurWindow", blur_img);
+	imshow("4. DilateBlurWindow", blur_img);
+
+	//canny algorithm
 	Canny(blur_img, detected_edges, 50, 400);
-	imshow("4. CannyWindow", detected_edges);
+	imshow("5. CannyWindow", detected_edges);
 
 	//Hough Transform algorithm
 	houghTranform(detected_edges);
-	imshow("5. HoughTransformWindow", hough);
+	imshow("6. HoughTransformWindow", hough);
 
 	//Probabilistic Hough Transform algorithm
 	probabilisticHoughTranform(detected_edges);
-	imshow("6. ProbabilisticHoughTransformWindow", houghP);
+	imshow("7. ProbabilisticHoughTransformWindow", houghP);
 	
 	// bitwise AND of the two hough images
 	bitwise_and(houghP, hough, houghP);
 	Mat houghPinv=Mat(src.size(), CV_8U, Scalar(0));
 	dst = Mat(src.size(), CV_8U, Scalar(0));
 	threshold(houghP, houghPinv, 150, 255, THRESH_BINARY_INV); // threshold and invert to black lines
-	imshow("7. HoughTransformJoinWindow", houghPinv);
+	imshow("8. HoughTransformJoinWindow", houghPinv);
 	
 	//canny
 	Canny(houghPinv, detected_edges, 100, 350);
@@ -142,7 +134,7 @@ void FindRoad::houghTransformJoin() {
 	lineSeparator();
 	drawDetectedLines(src);
 
-	imshow("8. Final", src);
+	imshow("9. Final", src);
 	lines.clear();
 }
 
@@ -161,10 +153,10 @@ Mat FindRoad::houghTransformJoinVideo() {
 	//turn image in a gray scale
 	cvtColor(removed, src_gray, CV_BGR2GRAY);
 
-	//canny algorithm
-	//erode(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)));
 	dilate(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 	medianBlur(erode_img, blur_img, 5);
+
+	//canny algorithm
 	Canny(blur_img, detected_edges, 50, 400);
 
 	//Hough Transform algorithm
@@ -187,13 +179,13 @@ Mat FindRoad::houghTransformJoinVideo() {
 	// Set probabilistic Hough parameters
 	lineSeparator();
 	drawDetectedLines(src);
+
 	lines.clear();
 
 	return src;
 }
 
 void FindRoad::drawDetectedLines(Mat &image, Scalar color) {
-
 	// Draw the lines
 	vector<Vec4i>::const_iterator it2 = lines.begin();
 
@@ -208,9 +200,8 @@ void FindRoad::drawDetectedLines(Mat &image, Scalar color) {
 }
 
 void FindRoad::lineSeparator() {
-	int count = 0;
 	double temp_m = 0;
-	double m = 0;
+	float m = 0;
 
 	vector<Vec4i> leftLines;
 	vector<Vec4i> rightLines;
@@ -222,47 +213,51 @@ void FindRoad::lineSeparator() {
 		Point pt1((*it2)[0], (*it2)[1]);
 		Point pt2((*it2)[2], (*it2)[3]);
 
-		Point vec(pt1.x-pt2.x, pt1.y-pt2.y);
+		Point vec(pt2.x - pt1.x, pt2.y - pt1.y);
 
 		temp_m = m;
-		m = (double)vec.y / (double)vec.x;
+		m = (float)vec.y / (float)vec.x;
 
-		count++;
-
-		if (m > 0.0) {
-			if(it2==lines.begin()){
-				leftLines.push_back((*it2));
-			} else if (abs(temp_m-m)<=1) {
+		if (m < 0) {//because y=0 is on the top of image
+			if(it2==lines.begin() || abs(temp_m - m) <= 1){
 				leftLines.push_back((*it2));
 			}
-		}else {
-			if (it2 == lines.begin()) {
-				rightLines.push_back((*it2));
-			}
-			else if (abs(temp_m - m) <= 1) {
+		} else {
+			if (it2 == lines.begin() || abs(temp_m - m) <= 1) {
 				rightLines.push_back((*it2));
 			}
 		}
 		++it2;
 	}
 
-	Point meanBeginLeft, meanBeginRight;
-	Point meanEndLeft, meanEndRight;
+	Point beginLeft, endLeft, beginRight, endRight;
 	Point intPoint, downPointLeft, downPointRight;
-
+	
 	if (!leftLines.empty() && !rightLines.empty()) {
-		lineStretchUp(leftLines, meanBeginLeft, meanEndLeft);
-		lineStretchUp(rightLines, meanBeginRight, meanEndRight);
+		vector<Vec4i> oldLeftResults = leftLines;
+		vector<Vec4i> oldRightResults = rightLines;
 
-		getIntersectionPoint(meanBeginLeft, meanEndLeft, meanBeginRight, meanEndRight, intPoint);
+		//select more white lines
+		setLinesWithMoreWhitePixels(leftLines);
+		setLinesWithMoreWhitePixels(rightLines);
 
-		//extend lines
-		lineStretchDown(meanBeginLeft, intPoint, meanBeginRight, intPoint, downPointLeft, downPointRight);
+		if (leftLines.empty() || rightLines.empty()) {
+			lineAverage(oldLeftResults, beginLeft, endLeft);
+			lineAverage(oldRightResults, beginRight, endRight);
+		}else {
+			beginLeft = Point(leftLines[0][0], leftLines[0][1]);
+			endLeft = Point(leftLines[0][2], leftLines[0][3]);
+			beginRight = Point(rightLines[0][0], rightLines[0][1]);
+			endRight = Point(rightLines[0][2], rightLines[0][3]);
+		}
+
+		getIntersectionPoint(beginLeft, endLeft, beginRight, endRight, intPoint);
+		lineStretch(beginLeft, intPoint, beginRight, intPoint, downPointLeft, downPointRight);
 
 		vector<Vec4i> extendedLines;
 		extendedLines.push_back(Vec4i(downPointLeft.x, downPointLeft.y, intPoint.x, intPoint.y));
 		extendedLines.push_back(Vec4i(downPointRight.x, downPointRight.y, intPoint.x, intPoint.y));
-
+		
 		if (!extendedLines.empty()) {
 			oldLines = extendedLines;
 			lines.clear();
@@ -272,6 +267,7 @@ void FindRoad::lineSeparator() {
 		//show intersection point
 		circle(src, intPoint, 8, Scalar(0, 255, 255), 3);
 	}else {
+		
 		if (!oldLines.empty()) {
 			lines.clear();
 			lines = oldLines;
@@ -282,12 +278,12 @@ void FindRoad::lineSeparator() {
 	}
 }
 
-void FindRoad::lineStretchUp(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd) {
+void FindRoad::lineAverage(vector<Vec4i> linesSeparated, Point & meanBegin, Point & meanEnd) {
 	vector<Vec4i>::const_iterator it2 = linesSeparated.begin();
 
-	Point sumBegin(0,0), sumEnd(0,0);
-	meanBegin=Point(0, 0);
-	meanEnd=Point(0, 0);
+	Point sumBegin(0, 0), sumEnd(0, 0);
+	meanBegin = Point(0, 0);
+	meanEnd = Point(0, 0);
 	int count = 0;
 
 	while (it2 != linesSeparated.end()) {
@@ -310,7 +306,7 @@ void FindRoad::lineStretchUp(vector<Vec4i> linesSeparated, Point & meanBegin, Po
 	meanEnd.y = sumEnd.y / count;
 }
 
-void FindRoad::lineStretchDown(Point lup, Point ldown, Point rup, Point rdown, Point & dpl, Point & dpr) {
+void FindRoad::lineStretch(Point lup, Point ldown, Point rup, Point rdown, Point & dpl, Point & dpr) {
 	double ml = (double)(lup.y - ldown.y) / (double)(lup.x - ldown.x);
 	double bl = lup.y - ml*lup.x;
 	double xl = (src.size().height - bl) / ml;
@@ -352,4 +348,45 @@ bool FindRoad::getIntersectionPoint(Point a1, Point a2, Point b1, Point b2, Poin
 	intPnt = p + t*r;
 
 	return true;
+}
+
+void FindRoad::setLinesWithMoreWhitePixels(vector<Vec4i> & lines) {
+
+	vector<Vec4i>::const_iterator it2 = lines.begin();
+
+	int moreWhite = -1;
+	Point pWhite1, pWhite2;
+
+
+	while (it2 != lines.end()) {
+		int countP1 = getColorCount(Point((*it2)[0], (*it2)[1]));
+		int countP2 = getColorCount(Point((*it2)[2], (*it2)[3]));
+
+		int countT = countP1 + countP2;
+
+		if (moreWhite<countT) {
+			moreWhite = countT;
+			pWhite1 = Point((*it2)[0], (*it2)[1]);
+			pWhite2 = Point((*it2)[2], (*it2)[3]);
+		}
+		++it2;
+	}
+
+	if (moreWhite != -1) {
+		lines.clear();
+		lines.push_back(Vec4i(pWhite1.x, pWhite1.y, pWhite2.x, pWhite2.y));
+	}
+}
+
+int FindRoad::getColorCount(Point p) {
+	int count = 0;
+	for (int i = p.x - 10; i < p.x + 10; i++) {
+		for (int j = p.y - 10; j < p.y + 10; j++) {
+			if (hsv_image.at<Vec3b>(Point(i, j)).val[2]>204 && hsv_image.at<Vec3b>(Point(i, j)).val[2]<255 && 
+				hsv_image.at<Vec3b>(Point(i, j)).val[1]>0 && hsv_image.at<Vec3b>(Point(i, j)).val[1]<51) {
+				count++;
+			}
+		}
+	}
+	return count;
 }
