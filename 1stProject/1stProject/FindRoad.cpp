@@ -14,10 +14,7 @@ FindRoad::FindRoad(String videoDir) {
 	namedWindow("video", 1);
 	while (cap.isOpened()) {
 
-		Mat frame;
-		cap >> frame;
-
-		src = frame;
+		cap >> src;
 		houghTransformJoinVideo();
 
 		imshow("video", src);
@@ -39,6 +36,7 @@ void FindRoad::cut() {
 
 void FindRoad::houghTranform(Mat img) {
 
+	//nr of votes
 	int houghVote = 70;
 
 	vector<Vec2f> lines;
@@ -92,21 +90,22 @@ void FindRoad::houghTransformJoin() {
 	
 	//white and yellow segmentation
 	cvtColor(cut_image, hsv_image, CV_BGR2HSV);
-	inRange(hsv_image, Scalar(0, 0, 0), Scalar(180, 50, 255), white_lines);//white lines
-	inRange(hsv_image, Scalar(18, 102, 204), Scalar(26, 255, 255), yellow_lines);//yellow lines
-	bitwise_or(yellow_lines, white_lines, removeBack);
-	cut_image.copyTo(removed, removeBack);
+	inRange(hsv_image, Scalar(0, 0, 0), Scalar(180, 50, 255), white_lines);//get white lines and the road area (gray colors)
+	inRange(hsv_image, Scalar(18, 102, 204), Scalar(26, 255, 255), yellow_lines);//get yellow lines
+	bitwise_or(yellow_lines, white_lines, removeBack);//join white and yellow lines and save the result on removeBack
+	cut_image.copyTo(removed, removeBack);//intersect cut image with removeBack to get only the road image
 	imshow("2. RemoveBackgroundWindow", removed);
 
 	//turn image in a gray scale
-	cvtColor(removed, src_gray, CV_BGR2GRAY);
+	cvtColor(removed, src_gray, CV_BGR2GRAY);//convert image to a gray scaled image
 	imshow("3. GrayWindow", src_gray);
 
+	// dilate and blur image to remove noise and get more larger lines
 	dilate(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 	medianBlur(erode_img, blur_img, 5);
 	imshow("4. DilateBlurWindow", blur_img);
 
-	//canny algorithm
+	//detect lines with canny
 	Canny(blur_img, detected_edges, 50, 400);
 	imshow("5. CannyWindow", detected_edges);
 
@@ -125,13 +124,15 @@ void FindRoad::houghTransformJoin() {
 	threshold(houghP, houghPinv, 150, 255, THRESH_BINARY_INV); // threshold and invert to black lines
 	imshow("8. HoughTransformJoinWindow", houghPinv);
 	
-	//canny
+	//get lines of the resulted image
 	Canny(houghPinv, detected_edges, 100, 350);
 	lines.clear();
 	HoughLinesP(detected_edges, lines, 1, PI / 180, 4, 60, 10);
 	
-	// Set probabilistic Hough parameters
+	//separate right and left lines
 	lineSeparator();
+
+	//draw the last image with lines
 	drawDetectedLines(src);
 
 	imshow("9. Final", src);
@@ -145,18 +146,19 @@ Mat FindRoad::houghTransformJoinVideo() {
 
 	//white and yellow segmentation
 	cvtColor(cut_image, hsv_image, CV_BGR2HSV);
-	inRange(hsv_image, Scalar(0, 0, 0), Scalar(180, 50, 255), white_lines);//white lines
-	inRange(hsv_image, Scalar(18, 102, 204), Scalar(26, 255, 255), yellow_lines);//yellow lines
-	bitwise_or(yellow_lines, white_lines, removeBack);
-	cut_image.copyTo(removed, removeBack);
+	inRange(hsv_image, Scalar(0, 0, 0), Scalar(180, 50, 255), white_lines);//get white lines and the road area (gray colors)
+	inRange(hsv_image, Scalar(18, 102, 204), Scalar(26, 255, 255), yellow_lines);//get yellow lines
+	bitwise_or(yellow_lines, white_lines, removeBack);//join white and yellow lines and save the result on removeBack
+	cut_image.copyTo(removed, removeBack);//intersect cut image with removeBack to get only the road image
 
 	//turn image in a gray scale
-	cvtColor(removed, src_gray, CV_BGR2GRAY);
+	cvtColor(removed, src_gray, CV_BGR2GRAY);//convert image to a gray scaled image
 
+	// dilate and blur image to remove noise and get more larger lines
 	dilate(src_gray, erode_img, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 	medianBlur(erode_img, blur_img, 5);
 
-	//canny algorithm
+	//detect lines with canny
 	Canny(blur_img, detected_edges, 50, 400);
 
 	//Hough Transform algorithm
@@ -171,15 +173,16 @@ Mat FindRoad::houghTransformJoinVideo() {
 	dst = Mat(src.size(), CV_8U, Scalar(0));
 	threshold(houghP, houghPinv, 150, 255, THRESH_BINARY_INV); // threshold and invert to black lines
 
-	//canny
+	//get lines of the resulted image
 	Canny(houghPinv, detected_edges, 100, 350);
 	lines.clear();
 	HoughLinesP(detected_edges, lines, 1, PI / 180, 4, 60, 10);
 
-	// Set probabilistic Hough parameters
+	//separate right and left lines
 	lineSeparator();
-	drawDetectedLines(src);
 
+	//draw the last image with lines
+	drawDetectedLines(src);
 	lines.clear();
 
 	return src;
@@ -208,6 +211,7 @@ void FindRoad::lineSeparator() {
 
 	vector<Vec4i>::const_iterator it2 = lines.begin();
 
+	//separate lines in left and right lines
 	while (it2 != lines.end()) {
 
 		Point pt1((*it2)[0], (*it2)[1]);
@@ -233,26 +237,26 @@ void FindRoad::lineSeparator() {
 	Point beginLeft, endLeft, beginRight, endRight;
 	Point intPoint, downPointLeft, downPointRight;
 	
-	if (!leftLines.empty() && !rightLines.empty()) {
+	if (!leftLines.empty() && !rightLines.empty()) {//if one of them is empty we draw the last lines calculated
 		vector<Vec4i> oldLeftResults = leftLines;
 		vector<Vec4i> oldRightResults = rightLines;
 
-		//select more white lines
+		//select who have more white lines
 		setLinesWithMoreWhitePixels(leftLines);
 		setLinesWithMoreWhitePixels(rightLines);
 
-		if (leftLines.empty() || rightLines.empty()) {
+		if (leftLines.empty() || rightLines.empty()) {//if there arent white lines on one of them we make an average of lines
 			lineAverage(oldLeftResults, beginLeft, endLeft);
 			lineAverage(oldRightResults, beginRight, endRight);
-		}else {
+		}else {//else we get the lines who have more white
 			beginLeft = Point(leftLines[0][0], leftLines[0][1]);
 			endLeft = Point(leftLines[0][2], leftLines[0][3]);
 			beginRight = Point(rightLines[0][0], rightLines[0][1]);
 			endRight = Point(rightLines[0][2], rightLines[0][3]);
 		}
 
-		getIntersectionPoint(beginLeft, endLeft, beginRight, endRight, intPoint);
-		lineStretch(beginLeft, intPoint, beginRight, intPoint, downPointLeft, downPointRight);
+		getIntersectionPoint(beginLeft, endLeft, beginRight, endRight, intPoint);//get the intersection (vanishing) point
+		lineStretch(beginLeft, intPoint, beginRight, intPoint, downPointLeft, downPointRight);//stretch the line to the end of image
 
 		vector<Vec4i> extendedLines;
 		extendedLines.push_back(Vec4i(downPointLeft.x, downPointLeft.y, intPoint.x, intPoint.y));

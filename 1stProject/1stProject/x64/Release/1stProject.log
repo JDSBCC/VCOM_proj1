@@ -1,4 +1,4 @@
-﻿Build started 31/10/2015 21:36:11.
+﻿Build started 01/11/2015 15:37:06.
      1>Project "C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\1stProject\1stProject.vcxproj" on node 2 (Rebuild target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /IC:\opencv\build\\include /Zi /nologo /W3 /WX- /sdl /O2 /Oi /GL /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Yc"stdafx.h" /Fp"x64\Release\1stProject.pch" /Fo"x64\Release\\" /Fd"x64\Release\vc140.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
@@ -7,12 +7,12 @@
          1stProject.cpp
          Camera.cpp
          FindRoad.cpp
+     1>FindRoad.cpp(64): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
      1>FindRoad.cpp(66): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-     1>FindRoad.cpp(68): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-     1>FindRoad.cpp(321): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-     1>FindRoad.cpp(323): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+     1>FindRoad.cpp(325): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
      1>FindRoad.cpp(327): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-     1>FindRoad.cpp(330): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+     1>FindRoad.cpp(331): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+     1>FindRoad.cpp(334): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
          Image.cpp
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\x64\Release\1stProject.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:C:\opencv\build\\x64\vc12\lib opencv_ts300.lib opencv_ts300d.lib opencv_world300.lib opencv_world300d.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\x64\Release\1stProject.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG:incremental /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\João\Desktop\Feup\5º ano\1º Semestre\Visão por Computador\VCOM_proj1\1stProject\x64\Release\1stProject.lib" /MACHINE:X64 x64\Release\1stProject.obj
@@ -28,4 +28,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:09.99
+Time Elapsed 00:00:07.80
